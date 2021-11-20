@@ -36,7 +36,6 @@ const Head = () => {
 export default function Register() {
   const [value, setValue] = useState({});
   const size = React.useContext(ResponsiveContext);
-  const [emp, setEmp] = React.useState("medium");
 
   return (
     <Box fill="true">
@@ -57,7 +56,7 @@ export default function Register() {
               : { bottom: "xlarge", horizontal: "medium" }
           }
         >
-          
+          <Heading size="small">Register</Heading>
           <Form
             value={value}
             onChange={(nextValue) => setValue(nextValue)}
@@ -73,9 +72,12 @@ export default function Register() {
               required
             >
               <Select
-                options={["Guest House Services", "Market Shop Services", "Landscaping Services"]}
-                value={emp}
-                onChange={({ option }) => setEmp(option)}
+                options={[
+                  "Guest House Services",
+                  "Market Shop Services",
+                  "Landscaping Services",
+                ]}
+                name="emp"
               />
             </FormField>
             <FormField
