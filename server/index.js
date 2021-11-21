@@ -72,10 +72,12 @@ app.post("/api/login", async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-  const passQuery = "SELECT `password` FROM `Users` WHERE `username` = ?";
+  const passQuery =
+    "SELECT `password`,`employment` FROM `Users` WHERE `username` = ?";
 
   const [rows, fields] = await db.query(passQuery, [username]);
   const requiredHash = rows[0].password;
+  const emp = rows[0].employment;
 
   bcrypt.compare(password, requiredHash, (err, result) => {
     try {
@@ -86,6 +88,7 @@ app.post("/api/login", async (req, res) => {
         req.session.save();
         return res.send({
           success: true,
+          employment: emp,
         });
       } else {
         res.send({ success: false });
@@ -108,6 +111,7 @@ app.post("/api/register", async (req, res) => {
     res.send({ success: false, message: "Username already exists." });
     throw new Error("User exists.");
   }
+  
   if (pass != cpass) {
     res.send({ success: false, message: "Passwords do not match" });
     throw new Error("Passwords need to match");

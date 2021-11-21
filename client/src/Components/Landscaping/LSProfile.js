@@ -1,10 +1,10 @@
-import { Box,Anchor, Heading } from "grommet";
+import { Heading } from "grommet";
 import { useEffect, useState } from "react";
 
 const axios = require("axios");
 axios.defaults.withCredentials = true;
 
-export default function MSProfile() {
+export default function LSProfile() {
   const [username, setUserName] = useState("");
 
   useEffect(() => {
@@ -13,10 +13,5 @@ export default function MSProfile() {
     });
   }, []);
 
-  return (
-    <Box>
-      <Heading>Welcome {username}</Heading>
-      <Anchor href="/MSUpdate"> Update Profile </Anchor>
-    </Box>
-  );
+  return <Heading>Welcome {username}</Heading>;
 }
