@@ -12,6 +12,7 @@ import {
 import { Home } from "grommet-icons";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const axios = require("axios");
 
@@ -19,9 +20,6 @@ const Head = () => {
   let navigate = useNavigate();
   return (
     <Header alignContent="center" border={{ side: "bottom" }}>
-      <Heading alignSelf="center" size="small">
-        Register
-      </Heading>
       <Button
         icon={<Home />}
         hoverIndicator
@@ -34,6 +32,7 @@ const Head = () => {
 };
 
 export default function Register() {
+  let navigate = useNavigate();
   const [value, setValue] = useState({});
   const size = React.useContext(ResponsiveContext);
 
@@ -62,7 +61,16 @@ export default function Register() {
             onChange={(nextValue) => setValue(nextValue)}
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
-              axios.post("http://localhost:3001/api/register", value);
+              axios
+                .post("http://localhost:3001/api/register", value)
+                .then((response) => {
+                  if (response.data.success) {
+                    Swal.fire(response.data.message);
+                    navigate("/");
+                  } else {
+                    Swal.fire(response.data.message);
+                  }
+                });
             }}
           >
             <FormField
@@ -76,6 +84,7 @@ export default function Register() {
                   "Guest House Services",
                   "Market Shop Services",
                   "Landscaping Services",
+                  "Administration",
                 ]}
                 name="emp"
               />
@@ -99,7 +108,7 @@ export default function Register() {
             </FormField>
 
             <FormField
-              name="confirm-password"
+              name="confirm_password"
               htmlFor="text-input-id"
               label="Confirm Password"
               required
@@ -111,8 +120,8 @@ export default function Register() {
             >
               <TextInput
                 type="password"
-                id="confirm-password"
-                name="confirm-password"
+                id="confirm_password"
+                name="confirm_password"
               />
             </FormField>
 
