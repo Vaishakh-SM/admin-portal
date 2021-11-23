@@ -132,7 +132,6 @@ export default function Register() {
               fill={"horizontal"}
             >
               <Button type="submit" size="xlarge" primary label="Register" />
-
               <Button type="reset" size="xlarge" label="Reset" />
             </Box>
           </Form>

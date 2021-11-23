@@ -4,6 +4,7 @@ import GHProfile from "./Components/GuestHouse/GHProfile";
 import LSProfile from "./Components/Landscaping/LSProfile";
 import Login from "./Components/Login";
 import MSProfile from "./Components/MarketShop/MSProfile";
+import MSUpdate from "./Components/MarketShop/MSUpdate";
 import Profile from "./Components/Profile";
 import Register from "./Components/Register";
 
@@ -17,6 +18,7 @@ function App() {
         <Route path="/guesthouse/profile" element={<GHProfile />} />
         <Route path="/marketshop/profile" element={<MSProfile />} />
         <Route path="/landscaping/profile" element={<LSProfile />} />
+        <Route path="/marketshop/personal_details" element={<MSUpdate />} />
       </Routes>
     </Grommet>
   );
