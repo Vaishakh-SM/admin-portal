@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 const axios = require("axios");
 axios.defaults.withCredentials = true;
 
-export default function GHProfile() {
+export default function LSProfile() {
   const [username, setUserName] = useState("");
 
   useEffect(() => {
