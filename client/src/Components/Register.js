@@ -74,19 +74,21 @@ export default function Register() {
             }}
           >
             <FormField
-              name="emp"
+              name="role"
               htmlFor="text-input-id"
-              label="Employment"
+              label="Role"
               required
             >
               <Select
                 options={[
-                  "Guest House Services",
-                  "Market Shop Services",
-                  "Landscaping Services",
-                  "Administration",
+                  { label: "Administration", roleID: 1 },
+                  { label: "Guest House Services", roleID: 2 },
+                  { label: "Market Shop Services", roleID: 3 },
+                  { label: "Landscaping Services", roleID: 4 },
+                  { label: "General user", roleID: 5 },
                 ]}
-                name="emp"
+                name="role"
+                labelKey="label"
               />
             </FormField>
             <FormField

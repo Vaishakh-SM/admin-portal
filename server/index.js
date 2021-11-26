@@ -73,11 +73,11 @@ app.post("/api/login", async (req, res) => {
   const password = req.body.password;
 
   const passQuery =
-    "SELECT `password`,`employment` FROM `Users` WHERE `username` = ?";
+    "SELECT `password`,`RoleID` FROM `Users` WHERE `username` = ?";
 
   const [rows, fields] = await db.query(passQuery, [username]);
   const requiredHash = rows[0].password;
-  const emp = rows[0].employment;
+  const roleID = rows[0].RoleID;
 
   bcrypt.compare(password, requiredHash, (err, result) => {
     try {
@@ -88,7 +88,7 @@ app.post("/api/login", async (req, res) => {
         req.session.save();
         return res.send({
           success: true,
-          employment: emp,
+          roleID: RoleID,
         });
       } else {
         res.send({ success: false });
@@ -103,7 +103,7 @@ app.post("/api/register", async (req, res) => {
   const username = req.body.username;
   const pass = req.body.password;
   const cpass = req.body.confirm_password;
-  const emp = req.body.emp;
+  const roleID = req.body.role.roleID;
 
   const passQuery = "SELECT * FROM `Users` WHERE `username` = ?";
   const [rows, fields] = await db.query(passQuery, [username]);
@@ -118,11 +118,11 @@ app.post("/api/register", async (req, res) => {
   }
 
   const query =
-    "INSERT IGNORE INTO `Users`(`username`,`password`,`employment`) VALUES (?,?,?)";
+    "INSERT IGNORE INTO `Users`(`username`,`password`,`roleID`) VALUES (?,?,?)";
   try {
     bcrypt.hash(pass, saltRounds, function (err, hash) {
       if (err) throw err;
-      db.query(query, [username, hash, emp], (err, res) => {
+      db.query(query, [username, hash, roleID], (err, res) => {
         if (err) throw err;
         console.log("res is ", res);
       });
@@ -201,7 +201,10 @@ app.get("/api/getMarketPeople", async (req, res) => {
     [username]
   );
 
-  const [rows2, fields2] = await db.query("SELECT `StoreName` FROM `Stores` WHERE `StoreID`=?", [rows[0].storeID]);
+  const [rows2, fields2] = await db.query(
+    "SELECT `StoreName` FROM `Stores` WHERE `StoreID`=?",
+    [rows[0].storeID]
+  );
 
   try {
     res.send({
