@@ -59,14 +59,14 @@ export default function Login() {
                 .post("http://localhost:3001/api/login", value)
                 .then((response) => {
                   if (response.data.success === true) {
-                    switch (response.data.employment) {
-                      case "Guest House Services":
+                    switch (response.data.roleID) {
+                      case 2:
                         navigate("/guesthouse/profile");
                         break;
-                      case "Market Shop Services":
+                      case 3:
                         navigate("/marketshop/profile");
                         break;
-                      case "Landscaping Services":
+                      case 4:
                         navigate("/landscaping/profile");
                         break;
                       default:

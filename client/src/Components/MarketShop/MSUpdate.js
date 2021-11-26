@@ -85,7 +85,7 @@ export default function MSUpdate() {
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
               axios
-                .post("http://localhost:3001/api/addMarketPeople", value)
+                .post("http://localhost:3001/api/addShopkeeper", value)
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);
@@ -98,9 +98,6 @@ export default function MSUpdate() {
           >
             <FormField name="name" htmlFor="name" label="Full Name">
               <TextInput type="text" id="name" name="name" />
-            </FormField>
-            <FormField name="role" htmlFor="role" label="Role">
-              <Select options={["Shopkeeper", "Employee"]} name="role" />
             </FormField>
             <FormField name="store" label="Store">
               <Select options={store} name="store" />

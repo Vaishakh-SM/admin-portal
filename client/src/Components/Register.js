@@ -130,13 +130,14 @@ export default function Register() {
             <Box
               direction={size === "small" ? "column" : "row"}
               gap="medium"
-              margin={{ top: "large" }}
+              margin={{ top: "small" }}
               fill={"horizontal"}
             >
               <Button type="submit" size="xlarge" primary label="Register" />
               <Button type="reset" size="xlarge" label="Reset" />
             </Box>
           </Form>
+          <br/>
         </Box>
       </Box>
     </Box>
