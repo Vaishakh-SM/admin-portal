@@ -10,19 +10,17 @@ export default function MSProfile() {
   const [name, setName] = useState("");
   const [storeID, setStoreID] = useState();
   const [storeName, setStoreName] = useState("");
-  const [role, setRole] = useState("");
   const [phno, setPhno] = useState();
   const [securitypassID, setID] = useState("");
   const [passexpiry, setExpiry] = useState();
   let navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:3001/api/getMarketPeople").then((response) => {
+    axios.get("http://localhost:3001/api/getShopkeeper").then((response) => {
       setUserName(response.data.username);
       setName(response.data.name);
       setStoreID(response.data.storeID);
       setStoreName(response.data.storeName);
-      setRole(response.data.role);
       setPhno(response.data.phonenumber);
       setID(response.data.securitypassID);
       setExpiry(response.data.passexpiry);
@@ -58,10 +56,6 @@ export default function MSProfile() {
             <td style={{ textalign: "left" }}>{storeName}</td>
           </tr>
           <tr>
-            <th style={{ textalign: "left" }}>Role:</th>
-            <td style={{ textalign: "left" }}>{role}</td>
-          </tr>
-          <tr>
             <th style={{ textalign: "left" }}>Phone number:</th>
             <td style={{ textalign: "left" }}>{phno}</td>
           </tr>
@@ -76,7 +70,7 @@ export default function MSProfile() {
         </table>
       </div>
       <div
-        style={{ padding: "1%", width: "48%", float: "right", marginTop: "5%" }}
+        style={{ padding: "1%", width: "48%", float: "right" }}
       >
         <br />
         <Button
@@ -93,7 +87,7 @@ export default function MSProfile() {
         <Button label="Request License Extension" />
         <br />
         <br />
-        <Button label="Update Store Details" />
+        <Button label="Store Details" />
         <br />
         <br />
         <Button

@@ -88,7 +88,7 @@ app.post("/api/login", async (req, res) => {
         req.session.save();
         return res.send({
           success: true,
-          roleID: RoleID,
+          roleID: roleID,
         });
       } else {
         res.send({ success: false });
@@ -129,7 +129,7 @@ app.post("/api/register", async (req, res) => {
     });
     res.send({
       success: true,
-      message: "User successfully registered. Redirect to login.",
+      message: "User successfully registered. Redirected to login.",
     });
   } catch (e) {
     console.log(e);
@@ -156,27 +156,28 @@ app.get("/api/extractStore", async (req, res) => {
   }
 });
 
-app.post("/api/addMarketPeople", async (req, res) => {
+app.post("/api/addShopkeeper", async (req, res) => {
+  const username = req.session.username;
   const name = req.body.name;
-  const role = req.body.role;
   const store = req.body.store;
   const phno = req.body.phonenumber;
   const securitypassID = req.body.securitypass;
   const expiry = req.body.expiry;
   const storeID = Number(store.split("-")[0]);
 
-  const passQuery = "SELECT * FROM `marketPeople` WHERE `securitypassID` = ?";
+  const passQuery = "SELECT * FROM `shopkeepers` WHERE `securitypassID` = ?";
   const [rows, fields] = await db.query(passQuery, [securitypassID]);
   if (rows.length > 0) {
     res.send({ success: false, message: "User already exists." });
     throw new Error("User exists.");
   }
 
-  const query = "INSERT IGNORE INTO `marketpeople` VALUES(?,?,?,?,?,?)";
+  const query =
+    "INSERT IGNORE INTO `shopkeepers`(`username`,`name`,`storeID`,`phonenumber`, `securitypassID`,`passexpiry`) VALUES(?,?,?,?,?,?)";
   try {
     db.query(
       query,
-      [securitypassID, storeID, name, expiry, phno, role],
+      [username, name, storeID, phno, securitypassID, expiry],
       (err, res) => {
         if (err) throw err;
         console.log("res is", res);
@@ -192,28 +193,27 @@ app.post("/api/addMarketPeople", async (req, res) => {
   }
 });
 
-app.get("/api/getMarketPeople", async (req, res) => {
+app.get("/api/getShopkeeper", async (req, res) => {
   console.log("User cookie is", req.sessionID);
   const username = req.session.username;
 
   const [rows, fields] = await db.query(
-    "SELECT * FROM `marketpeople` WHERE username=?",
+    "SELECT * FROM `shopkeepers` WHERE username=?",
     [username]
   );
 
-  const [rows2, fields2] = await db.query(
-    "SELECT `StoreName` FROM `Stores` WHERE `StoreID`=?",
-    [rows[0].storeID]
-  );
-
   try {
+    const [rows2, fields2] = await db.query(
+      "SELECT `StoreName` FROM `Stores` WHERE `StoreID`=?",
+      [rows[0].storeID]
+    );
+
     res.send({
       success: true,
       username: req.session.username,
       name: rows[0].name,
       storeID: rows[0].storeID,
       storeName: rows2[0].StoreName,
-      role: rows[0].role,
       phonenumber: rows[0].phonenumber,
       securitypassID: rows[0].securitypassID,
       passexpiry: rows[0].passexpiry.toDateString(),
