@@ -64,7 +64,7 @@ export default function Login() {
                         navigate("/guesthouse/profile");
                         break;
                       case 3:
-                        navigate("/marketshop/profile");
+                        navigate("/market/profile");
                         break;
                       case 4:
                         navigate("/landscaping/profile");

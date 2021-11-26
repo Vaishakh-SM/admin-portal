@@ -3,8 +3,8 @@ import { Route, Routes } from "react-router";
 import GHProfile from "./Components/GuestHouse/GHProfile";
 import LSProfile from "./Components/Landscaping/LSProfile";
 import Login from "./Components/Login";
-import MSProfile from "./Components/MarketShop/MSProfile";
-import MSUpdate from "./Components/MarketShop/MSUpdate";
+import MProfile from "./Components/MarketShop/MProfile";
+import MUpdate from "./Components/MarketShop/MUpdate";
 import Profile from "./Components/Profile";
 import Register from "./Components/Register";
 
@@ -16,9 +16,9 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/guesthouse/profile" element={<GHProfile />} />
-        <Route path="/marketshop/profile" element={<MSProfile />} />
+        <Route path="/market/profile" element={<MProfile />} />
         <Route path="/landscaping/profile" element={<LSProfile />} />
-        <Route path="/marketshop/personal_details" element={<MSUpdate />} />
+        <Route path="/market/personal_details" element={<MUpdate />} />
       </Routes>
     </Grommet>
   );

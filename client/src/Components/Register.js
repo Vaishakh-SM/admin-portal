@@ -83,7 +83,7 @@ export default function Register() {
                 options={[
                   { label: "Administration", roleID: 1 },
                   { label: "Guest House Services", roleID: 2 },
-                  { label: "Market Shop Services", roleID: 3 },
+                  { label: "Market Services", roleID: 3 },
                   { label: "Landscaping Services", roleID: 4 },
                   { label: "General user", roleID: 5 },
                 ]}
@@ -130,7 +130,7 @@ export default function Register() {
             <Box
               direction={size === "small" ? "column" : "row"}
               gap="medium"
-              margin={{ top: "small" }}
+              margin={{ top: "medium" }}
               fill={"horizontal"}
             >
               <Button type="submit" size="xlarge" primary label="Register" />

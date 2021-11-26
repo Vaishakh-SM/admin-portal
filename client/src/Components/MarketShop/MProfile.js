@@ -76,7 +76,7 @@ export default function MSProfile() {
         <Button
           label="Update Details"
           onClick={() => {
-            navigate("/marketshop/personal_details");
+            navigate("/market/personal_details");
           }}
         />
         <br />

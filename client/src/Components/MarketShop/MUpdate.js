@@ -25,7 +25,7 @@ const Head = () => {
         icon={<CaretPrevious />}
         hoverIndicator
         onClick={() => {
-          navigate("/marketshop/profile");
+          navigate("/market/profile");
         }}
       />
     </Header>
@@ -89,7 +89,7 @@ export default function MSUpdate() {
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);
-                    navigate("/marketshop/profile");
+                    navigate("/market/profile");
                   } else {
                     Swal.fire(response.data.message);
                   }
