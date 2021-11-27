@@ -61,6 +61,7 @@ export default function Register() {
             onChange={(nextValue) => setValue(nextValue)}
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
+              console.log("Sent ", value);
               axios
                 .post("http://localhost:3001/api/register", value)
                 .then((response) => {
@@ -89,6 +90,7 @@ export default function Register() {
                 ]}
                 name="role"
                 labelKey="label"
+                valueKey="roleID"
               />
             </FormField>
             <FormField
