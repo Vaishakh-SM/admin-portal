@@ -7,6 +7,9 @@ import MProfile from "./Components/MarketShop/MProfile";
 import MUpdate from "./Components/MarketShop/MUpdate";
 import Profile from "./Components/Profile";
 import Register from "./Components/Register";
+import SubmitBill from "./Components/MarketShop/SubmitBill";
+import StoreProfile from "./Components/MarketShop/StoreProfile";
+import LicenseExt from "./Components/MarketShop/LicenseExt";
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
         <Route path="/market/profile" element={<MProfile />} />
         <Route path="/landscaping/profile" element={<LSProfile />} />
         <Route path="/market/personal_details" element={<MUpdate />} />
+        <Route path="/market/submit_bills" element={<SubmitBill />} />
+        <Route path="/market/store_profile" element={<StoreProfile />} />
+        <Route path="/market/license_extension" element={<LicenseExt />} />
       </Routes>
     </Grommet>
   );

@@ -156,7 +156,7 @@ app.get("/api/extractStore", async (req, res) => {
   }
 });
 
-app.post("/api/addShopkeeper", async (req, res) => {
+app.post("/api/addShopkeeperDetails", async (req, res) => {
   const username = req.session.username;
   const name = req.body.name;
   const store = req.body.store;
@@ -173,11 +173,11 @@ app.post("/api/addShopkeeper", async (req, res) => {
   }
 
   const query =
-    "INSERT IGNORE INTO `shopkeepers`(`username`,`name`,`storeID`,`phonenumber`, `securitypassID`,`passexpiry`) VALUES(?,?,?,?,?,?)";
+    "UPDATE `shopkeepers` SET `name`=?,`storeID`=?,`phonenumber`=?,`securitypassID`=?,`passexpiry`=? WHERE `username`=?";
   try {
     db.query(
       query,
-      [username, name, storeID, phno, securitypassID, expiry],
+      [name, storeID, phno, securitypassID, expiry, username],
       (err, res) => {
         if (err) throw err;
         console.log("res is", res);
@@ -221,5 +221,19 @@ app.get("/api/getShopkeeper", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.send({ success: false });
+  }
+});
+
+app.get("/api/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(400).send("Unable to log out");
+      } else {
+        res.send("Logout successful");
+      }
+    });
+  } else {
+    res.end();
   }
 });
