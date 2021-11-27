@@ -89,6 +89,7 @@ export default function Register() {
                 ]}
                 name="role"
                 labelKey="label"
+                valueKey="roleID"
               />
             </FormField>
             <FormField
