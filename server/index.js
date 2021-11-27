@@ -144,9 +144,41 @@ app.get("/api/getUser", (req, res) => {
   });
 });
 
-app.get("/api/extractStore", async (req, res) => {
-  const query = "SELECT `StoreID`,`StoreName` from `Stores`";
+app.get("/api/extractStores", async (req, res) => {
+  const query = "SELECT * from `Stores`";
   const [rows, fields] = await db.query(query);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getStoreDetails", async (req, res) => {
+  const query =
+    "SELECT * from `Stores` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) ";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  const lquery =
+    "SELECT * from `License` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) ";
+  const [lrows, lfields] = await db.query(lquery, [req.session.username]);
+
+  var obj = Object.assign({}, rows[0], lrows[0]);
+  obj.LicenseExpiry = obj.LicenseExpiry.toDateString();
+  try {
+    res.send({ success: true, info: obj });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getPendingBills", async (req, res) => {
+  const query =
+    "SELECT * from `pendingbills` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) ";
+  const [rows, fields] = await db.query(query, [req.session.username]);
 
   try {
     res.send({ success: true, info: rows });

@@ -71,28 +71,14 @@ export default function MProfile() {
           </tr>
         </table>
       </div>
-      <div style={{ padding: "1%", width: "48%", float: "right" }}>
+      <div
+        style={{ padding: "1%", width: "48%", float: "right", marginTop: "5%" }}
+      >
         <br />
         <Button
           label="Update Details"
           onClick={() => {
             navigate("/market/personal_details");
-          }}
-        />
-        <br />
-        <br />
-        <Button
-          label="Submit bills"
-          onClick={() => {
-            navigate("/market/submit_bills");
-          }}
-        />
-        <br />
-        <br />
-        <Button
-          label="Request License Extension"
-          onClick={() => {
-            navigate("/market/license_extension");
           }}
         />
         <br />

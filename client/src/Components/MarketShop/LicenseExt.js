@@ -6,7 +6,6 @@ import {
   Header,
   Heading,
   ResponsiveContext,
-  Select,
   TextInput,
 } from "grommet";
 import { CaretPrevious } from "grommet-icons";
@@ -25,16 +24,15 @@ const Head = () => {
         icon={<CaretPrevious />}
         hoverIndicator
         onClick={() => {
-          navigate("/market/profile");
+          navigate("/market/store_profile");
         }}
       />
     </Header>
   );
 };
 
-export default function LicenseExt() {
+export default function SubmitBill() {
   const [username, setUserName] = useState("");
-  const [store, setStore] = useState([]);
   const [value, setValue] = useState({});
   let navigate = useNavigate();
   const size = React.useContext(ResponsiveContext);
@@ -42,17 +40,6 @@ export default function LicenseExt() {
   useEffect(() => {
     axios.get("http://localhost:3001/api/getUser").then((response) => {
       setUserName(response.data.username);
-    });
-    axios.get("http://localhost:3001/api/extractStore").then((response) => {
-      let optionArray = [];
-      const rows = response.data.info;
-      const n = rows.length;
-      for (let i = 0; i < n; i++) {
-        let id = rows[i].StoreID;
-        let name = rows[i].StoreName;
-        optionArray.push(id + "-" + name);
-      }
-      setStore(optionArray);
     });
   }, []);
 
@@ -77,7 +64,7 @@ export default function LicenseExt() {
         >
           {" "}
           <Heading level="3" alignSelf="center">
-            Profile Details: {username}
+            License Extension
           </Heading>
           <Form
             value={value}
@@ -85,34 +72,34 @@ export default function LicenseExt() {
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
               axios
-                .post("http://localhost:3001/api/addShopkeeperDetails", value)
+                .post("http://localhost:3001/api/addBillRequest", value)
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);
-                    navigate("/market/profile");
+                    navigate("/market/store_profile");
                   } else {
                     Swal.fire(response.data.message);
                   }
                 });
             }}
           >
-            <FormField name="name" htmlFor="name" label="Full Name">
-              <TextInput type="text" id="name" name="name" required />
+            <FormField
+              name="extPeriod"
+              label="Extension period required in years"
+            >
+              <TextInput type="number" name="extPeriod" required />
             </FormField>
-            <FormField name="store" label="Store">
-              <Select options={store} name="store" required />
+            <FormField name="fee" label="Fee Paid">
+              <TextInput type="number" name="fee" required />
             </FormField>
-            <FormField name="phonenumber" label="Phone Number">
-              <TextInput type="tel" name="phonenumber" required />
+            <FormField name="transactionID" label="Transaction ID">
+              <TextInput type="text" name="transactionID" required />
             </FormField>
-            <FormField name="securitypass" label="Security Pass ID">
-              <TextInput type="text" name="securitypass" required />
-            </FormField>
-            <FormField name="expiry" label="Security Pass Expiry">
-              <TextInput type="date" name="expiry" required />
+            <FormField name="modeofpayment" label="Mode of Payment">
+              <TextInput type="text" name="modeofpayment" required />
             </FormField>
             <br />
-            <Button type="submit" size="medium" primary label="Update" />
+            <Button type="submit" size="medium" primary label="Request" />
             &nbsp;&nbsp;
             <Button type="reset" size="medium" label="Reset" />
           </Form>
