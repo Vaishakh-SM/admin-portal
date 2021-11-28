@@ -10,7 +10,7 @@ import {
   TextInput,
 } from "grommet";
 import { CaretPrevious } from "grommet-icons";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -33,16 +33,9 @@ const Head = () => {
 };
 
 export default function SubmitBill() {
-  const [username, setUserName] = useState("");
   const [value, setValue] = useState({});
   let navigate = useNavigate();
   const size = React.useContext(ResponsiveContext);
-
-  useEffect(() => {
-    axios.get("http://localhost:3001/api/getUser").then((response) => {
-      setUserName(response.data.username);
-    });
-  }, []);
 
   return (
     <div>

@@ -16,13 +16,13 @@ CREATE TABLE Shopkeepers(
 ```
 CREATE TABLE billrequests(
   	breqID INT PRIMARY KEY AUTO_INCREMENT,
-  	storeID INT,
   	amount INT,
-  	type ENUM('Rent','Electricity','Others'),
   	transactionID  VARCHAR(255),
   	modeofpayment VARCHAR(100),
   	status ENUM('Denied','Accepted','In review','On hold') DEFAULT 'In review',
-  	FOREIGN KEY (storeID) REFERENCES Stores(storeID));
+	pb_id INT,
+	FOREIGN KEY (pb_id) REFERENCES pendingbills(pb_id)
+);
 ```
 
 ```
@@ -35,17 +35,40 @@ CREATE TABLE license(
 ```
 
 ```
- create table license_ext_req(
-    	er_id int primary key auto_increment,
+CREATE TABLE license_ext_req(
+    	er_id INT PRIMARY AUTO_INCREMENT,
     	licenseID varchar(10) unique,
-    	period float,
-    	fee_paid int,
+    	period FLOAT,
+    	fee_paid INT,
     	status enum('Denied','Accepted','In review','On hold') default 'In review',
-    	transactionID varchar(255) unique,
-    	modeofpayment varchar(100),
-    	foreign key (licenseID) references license(licenseID)
+    	transactionID VARCHAR(255) UNIQUE,
+    	modeofpayment VARCHAR(100),
+    	FOREIGN KEY (licenseID) REFERENCES license(licenseID)
 );
 ```
+
+```
+CREATE TABLE pendingbills(
+	pb_id INT PRIMARY KEY AUTO_INCREMENT,
+	storeID INT,
+	type ENUM ('Rent','Electricity','Others'),
+	month DATE,
+	due_amount INT
+);
+```
+
+```
+CREATE TABLE Stores(
+	StoreID INT PRIMARY KEY AUTO_INCREMENT,
+	StoreName TEXT,
+	Location TEXT,
+	Category TEXT,
+	Availability TEXT,
+	Rating INT 
+);
+```
+
+
 
 Adding triggers:
 

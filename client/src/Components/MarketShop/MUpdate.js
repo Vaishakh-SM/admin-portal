@@ -43,7 +43,7 @@ export default function MUpdate() {
     axios.get("http://localhost:3001/api/getUser").then((response) => {
       setUserName(response.data.username);
     });
-    axios.get("http://localhost:3001/api/extractStore").then((response) => {
+    axios.get("http://localhost:3001/api/extractStores").then((response) => {
       let optionArray = [];
       const rows = response.data.info;
       const n = rows.length;
