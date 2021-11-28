@@ -15,14 +15,36 @@ CREATE TABLE Shopkeepers(
 
 ```
 CREATE TABLE billrequests(
-  breqID INT PRIMARY KEY AUTO_INCREMENT,
-  storeID INT,
-  amount INT,
-  type ENUM('Rent','Electricity','Others'),
-  transactionID  VARCHAR(255),
-  modeofpayment VARCHAR(100),
-  status ENUM('Denied','Accepted','In review','On hold') DEFAULT 'In review',
-  FOREIGN KEY (storeID) REFERENCES Stores(storeID));
+  	breqID INT PRIMARY KEY AUTO_INCREMENT,
+  	storeID INT,
+  	amount INT,
+  	type ENUM('Rent','Electricity','Others'),
+  	transactionID  VARCHAR(255),
+  	modeofpayment VARCHAR(100),
+  	status ENUM('Denied','Accepted','In review','On hold') DEFAULT 'In review',
+  	FOREIGN KEY (storeID) REFERENCES Stores(storeID));
+```
+
+```
+CREATE TABLE license(
+	LicenseID VARCHAR(10) PRIMARY KEY,
+	LicenseExpiry DATE,
+	StoreID INT,
+	FOREIGN KEY (storeID) REFERENCES Stores(storeID))
+);
+```
+
+```
+ create table license_ext_req(
+    	er_id int primary key auto_increment,
+    	licenseID varchar(10) unique,
+    	period float,
+    	fee_paid int,
+    	status enum('Denied','Accepted','In review','On hold') default 'In review',
+    	transactionID varchar(255) unique,
+    	modeofpayment varchar(100),
+    	foreign key (licenseID) references license(licenseID)
+);
 ```
 
 Adding triggers:

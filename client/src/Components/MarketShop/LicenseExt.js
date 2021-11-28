@@ -72,7 +72,7 @@ export default function SubmitBill() {
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
               axios
-                .post("http://localhost:3001/api/addBillRequest", value)
+                .post("http://localhost:3001/api/addLicenseExt", value)
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);

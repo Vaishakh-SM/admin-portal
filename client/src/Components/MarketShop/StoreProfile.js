@@ -31,6 +31,7 @@ export default function StoreProfile() {
   const [licenseID, setID] = useState("");
   const [licenseExpiry, setExpiry] = useState();
   const [pendingbills, setPendingBills] = useState([]);
+  const [statRequests, setStatRequests] = useState([]);
   let navigate = useNavigate();
 
   useEffect(() => {
@@ -49,6 +50,9 @@ export default function StoreProfile() {
     });
     axios.get("http://localhost:3001/api/getPendingBills").then((response) => {
       setPendingBills(response.data.info);
+    });
+    axios.get("http://localhost:3001/api/getRequestStatus").then((response) => {
+      setStatRequests(response.data.info);
     });
   }, []);
 
@@ -165,7 +169,7 @@ export default function StoreProfile() {
               <th align="center" width="30%">
                 ID
               </th>
-              <th align="center" width="40%">
+              <th align="center" width="20%">
                 Type
               </th>
               <th align="center" width="40%">
@@ -174,21 +178,17 @@ export default function StoreProfile() {
             </tr>
           </thead>
           <tbody>
-            {pendingbills.map((bill) => {
-              var dt = new Date(bill.month).toLocaleString("en-us", {
-                month: "short",
-                year: "numeric",
-              });
+            {statRequests.map((req) => {
               return (
                 <tr align="center">
                   <td align="center" width="30%">
-                    
+                    {req.id}
+                  </td>
+                  <td align="center" width="20%">
+                    {req.type}
                   </td>
                   <td align="center" width="40%">
-                    2
-                  </td>
-                  <td align="center" width="40%">
-                    3
+                    {req.status}
                   </td>
                 </tr>
               );
