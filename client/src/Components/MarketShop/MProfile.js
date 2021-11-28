@@ -1,11 +1,11 @@
-import { Heading, Header, Button } from "grommet";
-import { useEffect, useState } from "react";
+import { Button, Header, Heading } from "grommet";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const axios = require("axios");
 axios.defaults.withCredentials = true;
 
-export default function MSProfile() {
+export default function MProfile() {
   const [username, setUserName] = useState("");
   const [name, setName] = useState("");
   const [storeID, setStoreID] = useState();
@@ -16,8 +16,10 @@ export default function MSProfile() {
   let navigate = useNavigate();
 
   useEffect(() => {
-    axios.get("http://localhost:3001/api/getShopkeeper").then((response) => {
+    axios.get("http://localhost:3001/api/getUser").then((response) => {
       setUserName(response.data.username);
+    });
+    axios.get("http://localhost:3001/api/getShopkeeper").then((response) => {
       setName(response.data.name);
       setStoreID(response.data.storeID);
       setStoreName(response.data.storeName);
@@ -70,29 +72,29 @@ export default function MSProfile() {
         </table>
       </div>
       <div
-        style={{ padding: "1%", width: "48%", float: "right" }}
+        style={{ padding: "1%", width: "48%", float: "right", marginTop: "5%" }}
       >
         <br />
         <Button
           label="Update Details"
           onClick={() => {
-            navigate("/marketshop/personal_details");
+            navigate("/market/personal_details");
           }}
         />
         <br />
         <br />
-        <Button label="Submit bills" />
-        <br />
-        <br />
-        <Button label="Request License Extension" />
-        <br />
-        <br />
-        <Button label="Store Details" />
+        <Button
+          label="Store Details"
+          onClick={() => {
+            navigate("/market/store_profile");
+          }}
+        />
         <br />
         <br />
         <Button
           label="Sign Out"
           onClick={() => {
+            axios.get("http://localhost:3001/api/logout");
             navigate("/");
           }}
         />

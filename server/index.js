@@ -144,8 +144,8 @@ app.get("/api/getUser", (req, res) => {
   });
 });
 
-app.get("/api/extractStore", async (req, res) => {
-  const query = "SELECT `StoreID`,`StoreName` from `Stores`";
+app.get("/api/extractStores", async (req, res) => {
+  const query = "SELECT * from `Stores`";
   const [rows, fields] = await db.query(query);
 
   try {
@@ -156,7 +156,59 @@ app.get("/api/extractStore", async (req, res) => {
   }
 });
 
-app.post("/api/addShopkeeper", async (req, res) => {
+app.get("/api/getStoreDetails", async (req, res) => {
+  const query =
+    "SELECT * from `Stores` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) ";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  const lquery =
+    "SELECT * from `License` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) ";
+  const [lrows, lfields] = await db.query(lquery, [req.session.username]);
+
+  var obj = Object.assign({}, rows[0], lrows[0]);
+  obj.LicenseExpiry = obj.LicenseExpiry.toDateString();
+  try {
+    res.send({ success: true, info: obj });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getPendingBills", async (req, res) => {
+  const query =
+    "SELECT * from `pendingbills` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) ";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getRequestStatus", async (req, res) => {
+  const bquery =
+    "SELECT `a`.`pb_id` as `id`,`type`,`status` from `billrequests` `a` LEFT JOIN `pendingbills` `b` ON `a`.`pb_id`=`b`.`pb_id` WHERE`StoreID` = (SELECT`StoreID` FROM `Shopkeepers` WHERE`username` =?) ";
+  const [brows, bfields] = await db.query(bquery, [req.session.username]);
+
+  const lquery =
+    "SELECT `licenseID` as `id`,`status` from `license_ext_req` WHERE `LicenseID`=(SELECT `LicenseID` from `License` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?)) ";
+  const [lrows, lfields] = await db.query(lquery, [req.session.username]);
+  for (let i = 0; i < lrows.length; i++) {
+    lrows[i].type = "License";
+  }
+  Array.prototype.push.apply(brows, lrows);
+  try {
+    res.send({ success: true, info: brows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.post("/api/addShopkeeperDetails", async (req, res) => {
   const username = req.session.username;
   const name = req.body.name;
   const store = req.body.store;
@@ -173,11 +225,11 @@ app.post("/api/addShopkeeper", async (req, res) => {
   }
 
   const query =
-    "INSERT IGNORE INTO `shopkeepers`(`username`,`name`,`storeID`,`phonenumber`, `securitypassID`,`passexpiry`) VALUES(?,?,?,?,?,?)";
+    "UPDATE `shopkeepers` SET `name`=?,`storeID`=?,`phonenumber`=?,`securitypassID`=?,`passexpiry`=? WHERE `username`=?";
   try {
     db.query(
       query,
-      [username, name, storeID, phno, securitypassID, expiry],
+      [name, storeID, phno, securitypassID, expiry, username],
       (err, res) => {
         if (err) throw err;
         console.log("res is", res);
@@ -186,6 +238,85 @@ app.post("/api/addShopkeeper", async (req, res) => {
     res.send({
       success: true,
       message: "Details updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/addBillRequest", async (req, res) => {
+  const username = req.session.username;
+  const month = new Date(req.body.month);
+  const amount = req.body.amount;
+  const type = req.body.type;
+  const transactionID = req.body.transactionID;
+  const modeofpayment = req.body.modeofpayment;
+
+  const query1 = "SELECT `storeID` FROM `Shopkeepers` WHERE `username`=?";
+  const [rows1, fields1] = await db.query(query1, [username]);
+  const storeID = rows1[0].storeID;
+
+  const query2 =
+    "SELECT `PB_ID` FROM `pendingbills` WHERE `type`=? AND MONTH(`month`)=? AND YEAR(`month`)=? AND `StoreID`=?";
+  const [rows2, fields2] = await db.query(query2, [
+    type,
+    month.getMonth() + 1,
+    month.getFullYear(),
+    storeID,
+  ]);
+  const pb_id = rows2[0].PB_ID;
+
+  const query =
+    "INSERT IGNORE INTO `billrequests`(`pb_id`,`amount`,`transactionID`,`modeofpayment`) VALUES (?,?,?,?)";
+  try {
+    db.query(
+      query,
+      [pb_id, amount, transactionID, modeofpayment],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Details updated. Redirect to store profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/addLicenseExt", async (req, res) => {
+  const username = req.session.username;
+  const period = req.body.extPeriod;
+  const fee = req.body.fee;
+  const transactionID = req.body.transactionID;
+  const modeofpayment = req.body.modeofpayment;
+
+  const query1 = "SELECT `storeID` FROM `Shopkeepers` WHERE `username`=?";
+  const [rows1, fields1] = await db.query(query1, [username]);
+  const storeID = rows1[0].storeID;
+
+  const query2 = "SELECT `licenseID` FROM `license` WHERE `StoreID`=?";
+  const [rows2, fields2] = await db.query(query2, [storeID]);
+  const licenseID = rows2[0].licenseID;
+
+  const query =
+    "INSERT IGNORE INTO `license_ext_req`(`licenseID`,`period`,`fee_paid`,`transactionID`,`modeofpayment`) VALUES (?,?,?,?,?)";
+  try {
+    db.query(
+      query,
+      [licenseID, period, fee, transactionID, modeofpayment],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Details updated. Redirect to store profile.",
     });
   } catch (e) {
     console.log(e);
@@ -221,5 +352,19 @@ app.get("/api/getShopkeeper", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.send({ success: false });
+  }
+});
+
+app.get("/api/logout", (req, res) => {
+  if (req.session) {
+    req.session.destroy((err) => {
+      if (err) {
+        res.status(400).send("Unable to log out");
+      } else {
+        res.send("Logout successful");
+      }
+    });
+  } else {
+    res.end();
   }
 });

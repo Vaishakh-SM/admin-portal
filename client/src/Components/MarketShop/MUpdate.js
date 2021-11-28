@@ -25,14 +25,14 @@ const Head = () => {
         icon={<CaretPrevious />}
         hoverIndicator
         onClick={() => {
-          navigate("/marketshop/profile");
+          navigate("/market/profile");
         }}
       />
     </Header>
   );
 };
 
-export default function MSUpdate() {
+export default function MUpdate() {
   const [username, setUserName] = useState("");
   const [store, setStore] = useState([]);
   const [value, setValue] = useState({});
@@ -85,11 +85,11 @@ export default function MSUpdate() {
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
               axios
-                .post("http://localhost:3001/api/addShopkeeper", value)
+                .post("http://localhost:3001/api/addShopkeeperDetails", value)
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);
-                    navigate("/marketshop/profile");
+                    navigate("/market/profile");
                   } else {
                     Swal.fire(response.data.message);
                   }
@@ -97,19 +97,19 @@ export default function MSUpdate() {
             }}
           >
             <FormField name="name" htmlFor="name" label="Full Name">
-              <TextInput type="text" id="name" name="name" />
+              <TextInput type="text" id="name" name="name" required/>
             </FormField>
             <FormField name="store" label="Store">
-              <Select options={store} name="store" />
+              <Select options={store} name="store" required/>
             </FormField>
             <FormField name="phonenumber" label="Phone Number">
-              <TextInput type="tel" name="phonenumber" />
+              <TextInput type="tel" name="phonenumber" required/>
             </FormField>
             <FormField name="securitypass" label="Security Pass ID">
-              <TextInput type="text" name="securitypass" />
+              <TextInput type="text" name="securitypass" required/>
             </FormField>
             <FormField name="expiry" label="Security Pass Expiry">
-              <TextInput type="date" name="expiry" />
+              <TextInput type="date" name="expiry" required/>
             </FormField>
             <br />
             <Button type="submit" size="medium" primary label="Update" />
