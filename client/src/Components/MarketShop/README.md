@@ -68,6 +68,20 @@ CREATE TABLE Stores(
 );
 ```
 
+```
+CREATE TABLE Feedback(
+	FeedbackID INT PRIMARY KEY AUTO_INCREMENT,
+	StoreID INT,
+	Service Availability,
+	Availability INT,
+	Quality INT,
+	Price INT,
+	Conduct INT,
+	Message TEXT, 
+	FOREIGN KEY (StoreID) REFERENCES Stores(StoreID)
+);
+```
+
 Adding triggers:
 
 ```
