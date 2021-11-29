@@ -20,8 +20,7 @@ CREATE TABLE billrequests(
   	transactionID  VARCHAR(255),
   	modeofpayment VARCHAR(100),
   	status ENUM('Denied','Accepted','In review','On hold') DEFAULT 'In review',
-	pb_id INT,
-	FOREIGN KEY (pb_id) REFERENCES pendingbills(pb_id)
+	pb_id INT
 );
 ```
 

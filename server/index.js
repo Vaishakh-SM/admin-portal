@@ -190,7 +190,7 @@ app.get("/api/getPendingBills", async (req, res) => {
 
 app.get("/api/getRequestStatus", async (req, res) => {
   const bquery =
-    "SELECT `a`.`pb_id` as `id`,`type`,`status` from `billrequests` `a` LEFT JOIN `pendingbills` `b` ON `a`.`pb_id`=`b`.`pb_id` WHERE`StoreID` = (SELECT`StoreID` FROM `Shopkeepers` WHERE`username` =?) ";
+    "SELECT `a`.`pb_id` as `id`,`type`,`status` from `billrequests` `a` LEFT JOIN `pendingbills` `b` ON `a`.`pb_id`=`b`.`pb_id` WHERE `StoreID` = (SELECT `StoreID` FROM `Shopkeepers` WHERE `username` =?) ";
   const [brows, bfields] = await db.query(bquery, [req.session.username]);
 
   const lquery =
@@ -210,7 +210,7 @@ app.get("/api/getRequestStatus", async (req, res) => {
 
 app.get("/api/getBillRequests", async (req, res) => {
   const query =
-    "SELECT `a`.*,`storeID`,`type`,`month`,`due_amount` from `billrequests` `a` LEFT JOIN `pendingbills` `b` ON `a`.`pb_id`=`b`.`pb_id`";
+    "SELECT `a`.*,`storeID`,`type`,`month`,`due_amount` from `billrequests` `a` LEFT JOIN `pendingbills` `b` ON `a`.`pb_id`=`b`.`pb_id` WHERE `status`!='Accepted'";
   const [rows, fields] = await db.query(query);
 
   try {
@@ -223,7 +223,7 @@ app.get("/api/getBillRequests", async (req, res) => {
 
 app.get("/api/getLicenseRequests", async (req, res) => {
   const query =
-    "SELECT `a`.*,`storeID`,`licenseExpiry` from `license_ext_req` `a` LEFT JOIN `license` `b` ON `a`.`licenseID`=`b`.`licenseID`";
+    "SELECT `a`.*,`storeID`,`licenseExpiry` from `license_ext_req` `a` LEFT JOIN `license` `b` ON `a`.`licenseID`=`b`.`licenseID` WHERE `status`!='Accepted'";
   const [rows, fields] = await db.query(query);
 
   try {
@@ -235,7 +235,6 @@ app.get("/api/getLicenseRequests", async (req, res) => {
 });
 
 app.get("/api/getShopkeeper", async (req, res) => {
-  console.log("User cookie is", req.sessionID);
   const username = req.session.username;
 
   const [rows, fields] = await db.query(
@@ -423,11 +422,33 @@ app.post("/api/updateBillRequest", async (req, res) => {
   const records = req.body;
   const query = "UPDATE `billrequests` SET `status`=? WHERE `breqID`=?";
   try {
-    records.forEach((obj, i) => {
+    records.forEach(async (obj, i) => {
       db.query(query, [obj.status, obj.id], (err, res) => {
         if (err) throw err;
         console.log("res is", res);
       });
+      if (obj.status === "Accepted") {
+        const query0 =
+          "SELECT `amount`,`pb_id` FROM `billrequests` WHERE `breqID`=?";
+        const [rows, fields] = await db.query(query0, [obj.id]);
+        const query1 =
+          "UPDATE `pendingbills` SET `due_amount`=`due_amount`-? WHERE `pb_id`=? ";
+        db.query(query1, [rows[0].amount, rows[0].pb_id], (err, res) => {
+          if (err) throw err;
+        });
+
+        const query2 =
+          "SELECT `due_amount` FROM `pendingbills` WHERE `pb_id`=?";
+        const [rows2, fields2] = await db.query(query2, [rows[0].pb_id]);
+        console.log(rows2[0].due_amount);
+        if (rows2[0].due_amount === 0) {
+          const query3 = "DELETE FROM `pendingbills` WHERE `pb_id`=?";
+          db.query(query3, [rows[0].pb_id], (err, res) => {
+            if (err) throw err;
+            console.log("res is", res);
+          });
+        }
+      }
     });
     res.send({
       success: true,
@@ -443,11 +464,19 @@ app.post("/api/updateLicenseRequest", async (req, res) => {
   const records = req.body;
   const query = "UPDATE `license_ext_req` SET `status`=? WHERE `er_id`=?";
   try {
-    records.forEach((obj, i) => {
+    records.forEach(async (obj, i) => {
       db.query(query, [obj.status, obj.id], (err, res) => {
         if (err) throw err;
         console.log("res is", res);
       });
+      if (obj.status === "Accepted") {
+        const query0 = "SELECT `period` FROM `license_ext_req` WHERE `er_id`=?";
+        const [rows, fields] = await db.query(query0, [obj.id]);
+
+        const query1 =
+          "UPDATE `license` SET `licenseExpiry`=DATE_ADD(`licenseExpiry`,INTERVAL ? YEAR) WHERE `licenseID`=(SELECT `licenseID` FROM `license_ext_req` WHERE `er_id`=?)";
+        db.query(query1, [rows[0].period, obj.id]);
+      }
     });
     res.send({
       success: true,
