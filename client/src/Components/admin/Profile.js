@@ -35,7 +35,12 @@ export default function Profile() {
       <div>
         <br />
         &nbsp;&nbsp;
-        <Button label="Add store" />
+        <Button
+          label="Add store"
+          onClick={() => {
+            navigate("/admin/addstore");
+          }}
+        />
         &nbsp;&nbsp;
         <Button
           label="Sign Out"

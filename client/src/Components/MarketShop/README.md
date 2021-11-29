@@ -64,11 +64,9 @@ CREATE TABLE Stores(
 	Location TEXT,
 	Category TEXT,
 	Availability TEXT,
-	Rating INT 
+	Rating FLOAT
 );
 ```
-
-
 
 Adding triggers:
 
@@ -81,6 +79,19 @@ BEGIN
 IF(NEW.RoleID=3) THEN
 INSERT INTO shopkeepers(username) VALUES (new.username);
 END IF;
+END$$
+DELIMITER ;
+```
+
+Creating procedures:
+
+```
+DELIMITER $$
+CREATE PROCEDURE updateRating(IN sID INT)
+BEGIN
+DECLARE s,a,q,p,c FLOAT DEFAULT 0;
+SELECT AVG(service),AVG(availability),AVG(quality),AVG(price),AVG(conduct) INTO s,a,q,p,c FROM feedback WHERE storeID=sID;
+UPDATE Stores SET rating=((s+a+q+p+c)/5.0) WHERE storeID=sID;
 END$$
 DELIMITER ;
 ```

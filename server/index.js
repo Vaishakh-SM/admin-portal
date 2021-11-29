@@ -147,7 +147,7 @@ app.get("/api/getUser", (req, res) => {
 app.get("/api/extractStores", async (req, res) => {
   const query = "SELECT * from `Stores`";
   const [rows, fields] = await db.query(query);
-  console.log(rows);
+
   try {
     res.send({ success: true, info: rows });
   } catch (e) {
@@ -262,6 +262,66 @@ app.get("/api/getShopkeeper", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.send({ success: false });
+  }
+});
+
+app.post("/api/addStore", async (req, res) => {
+  const name = req.body.storename;
+  const location = req.body.location;
+  const category = req.body.category;
+  const availability = req.body.availability;
+
+  const query =
+    "INSERT IGNORE INTO `Stores`(`storeName`,`location`,`category`,`availability`) VALUES(?,?,?,?)";
+  try {
+    db.query(query, [name, location, category, availability], (err, res) => {
+      if (err) throw err;
+      console.log("res is", res);
+    });
+    res.send({
+      success: true,
+      message: "Store added.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/addFeedback", async (req, res) => {
+  const store = req.body.store;
+  const storeID = Number(store.split("-")[0]);
+  const service = req.body.service;
+  const conduct = req.body.conduct;
+  const availability = req.body.availability;
+  const quality = req.body.quality;
+  const price = req.body.price;
+  const message = req.body.message;
+
+  try {
+    const query =
+      "INSERT IGNORE INTO `Feedback`(`storeID`,`service`,`availability`,`quality`,`price`,`conduct`,`message`) VALUES(?,?,?,?,?,?,?)";
+    db.query(
+      query,
+      [storeID, service, availability, quality, price, conduct, message],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+
+    const query2 = "CALL updateRating(?);";
+    db.query(query2, [storeID], (err, res) => {
+      if (err) throw err;
+      console.log("res is", res);
+    });
+    res.send({
+      success: true,
+      message: "Feedback submitted.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
   }
 });
 
