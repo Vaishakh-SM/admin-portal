@@ -265,6 +265,19 @@ app.get("/api/getShopkeeper", async (req, res) => {
   }
 });
 
+app.get("/api/getFeedback", async (req, res) => {
+  const query =
+    "SELECT `message` from `feedback` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) AND `message` IS NOT NULL ";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
 app.post("/api/addStore", async (req, res) => {
   const name = req.body.storename;
   const location = req.body.location;
