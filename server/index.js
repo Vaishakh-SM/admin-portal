@@ -537,3 +537,427 @@ app.get("/api/logout", (req, res) => {
     res.end();
   }
 });
+
+app.get("/api/getGardener", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `Gardener` WHERE username=?",
+    [username]
+  );
+  res.send({
+    success: true,
+    name: rows[0].name,
+    employeeID: rows[0].employeeID,
+    monthHours: rows[0].monthHours,
+    phonenumber: rows[0].phonenumber,
+    leaveDay: rows[0].leaveDay,
+    garden: rows[0].garden,
+  });
+  } 
+);
+
+app.post("/api/addGardener", async (req, res) => {
+  const username = req.session.username;
+  const name = req.body.name;
+  const phno = req.body.phonenumber;
+  const employeeID = req.body.employeeID;
+  const leaveDay = req.body.leaveDay;
+  const garden = req.body.garden;
+
+  const query =
+    "UPDATE `Gardener` SET `name`=?,`phonenumber`=?,`employeeID`=?,`leaveDay`=?,`garden`=? WHERE username=?";
+  try {
+    db.query(
+      query,
+      [name, phno, employeeID, leaveDay, garden, username],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Details updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+
+app.post("/api/locGardener", async (req, res) => {
+  const username = req.session.username;
+  const garden = req.body.garden;
+
+  const query =
+    "UPDATE `Gardener` SET `garden`=? WHERE username=?";
+  try {
+    db.query(
+      query,
+      [garden, username],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Location updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.get("/api/getGardens", async (req, res) => {
+  const query =
+    "SELECT * from `Garden`";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+
+app.post("/api/requestCut", async (req, res) => {
+  const username = req.session.username;
+  const garden = req.body.garden;
+
+  const query =
+    "INSERT INTO `CutRecs`(`garden`) VALUES (?)";
+  try {
+    db.query(
+      query,
+      [garden],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Cut Requested. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/gardenNote", async (req, res) => {
+  const username = req.session.username;
+  const date = req.body.date;
+  const garden = req.body.garden;
+  const notes = req.body.notes;
+  console.log(req.body);
+
+  const query =
+    "INSERT INTO `Notes` VALUES (?,?,?,?)";
+  try {
+    db.query(
+      query,
+      [date,username,garden,notes],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Note saved. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.get("/api/getNotes", async (req, res) => {
+  const query =
+    "SELECT * from `Notes`";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getVendor", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `Vendor` WHERE username=?",
+    [username]
+  );
+  res.send({
+    success: true,
+    vendorID: rows[0].vendorID,
+    field: rows[0].field,
+    dues: rows[0].dues,
+  });
+  } 
+);
+
+app.post("/api/updateVendor", async (req, res) => {
+  const username = req.session.username;
+  const vendorID = req.body.vendorID;
+  const field = req.body.field;
+  const dues = req.body.dues;
+
+  const query =
+    "UPDATE `Vendor` SET `vendorID`=?,`field`=?,`dues`=? WHERE username=?";
+  try {
+    db.query(
+      query,
+      [vendorID, field, dues, username],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Details updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/addDues", async (req, res) => {
+  const username = req.session.username;
+  const date = req.body.date;
+  const vendorID = req.body.vendorID;
+  const equipID = req.body.equipID;
+  const reason = req.body.reason;
+  const dues = req.body.dues;
+
+  const query =
+    "INSERT INTO `VendorBills` VALUES (?,?,?,?,?,?)";
+  try {
+    db.query(
+      query,
+      [date,username,vendorID,equipID,reason,dues],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Note saved. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.get("/api/getEquips", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+  console.log(username);
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `Equipment` WHERE vendor=?",
+    [username]
+  );
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+  } 
+);
+
+app.post("/api/updateRepair", async (req, res) => {
+  const username = req.session.username;
+  const equipID = req.body.equipID;
+  const repairStatus = req.body.repairStatus;
+
+  const query =
+    "UPDATE `Equipment` SET `repairStatus`=? WHERE equipID=?";
+  try {
+    db.query(
+      query,
+      [repairStatus, equipID],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Status updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.get("/api/getSupervisor", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `Supervisor` WHERE username=?",
+    [username]
+  );
+  res.send({
+    success: true,
+    name: rows[0].name,
+    employeeID: rows[0].employeeID,
+  });
+  } 
+);
+
+app.post("/api/updateSupervisor", async (req, res) => {
+  const username = req.session.username;
+  const employeeID = req.body.employeeID;
+  const name = req.body.name;
+
+  const query =
+    "UPDATE `Supervisor` SET `employeeID`=?,`name`=? WHERE username=?";
+  try {
+    db.query(
+      query,
+      [employeeID, name, username],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Details updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.get("/api/getBills", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+  console.log(username);
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `VendorBills`",
+    [username]
+  );
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+  } 
+);
+
+app.post("/api/clearPay", async (req, res) => {
+  const username = req.session.username;
+  const vendorID = req.body.vendorID;
+  const equipmentID = req.body.equipmentID;
+  const dues = req.body.dues;
+  console.log(vendorID);
+  console.log(equipmentID);
+  console.log(dues);
+  const query ="UPDATE `Vendor` SET `dues`=`dues`+ ? WHERE `vendorID`=?";
+  const lquery ="DELETE FROM `VendorBills` WHERE `vendorID`=? AND `equipID`=?";
+  try {
+    db.query(
+      query,
+      [dues, vendorID],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Details updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.get("/api/getRecs", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+  console.log(username);
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `CutRecs`",
+    
+  );
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+  } 
+);
+
+app.get("/api/getSchedule", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+  console.log(username);
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `WeekSchedule`",
+    
+  );
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+  } 
+);
+
+app.post("/api/manualSchedule", async (req, res) => {
+  const username = req.session.username;
+  const day = req.body.day;
+  const garden = req.body.garden;
+  const number = req.body.number;
+
+  const query =
+    "UPDATE `WeekSchedule` SET `number`=?, `garden`=? WHERE day=?";
+  try {
+    db.query(
+      query,
+      [number, garden, day],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+    res.send({
+      success: true,
+      message: "Day updated. Redirect to profile.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
