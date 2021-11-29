@@ -61,7 +61,7 @@ export default function Login() {
                   if (response.data.success === true) {
                     switch (response.data.roleID) {
                       case 1:
-                        navigate("/");
+                        navigate("/profile");
                         break;
                       case 2:
                         navigate("/guesthouse/profile");
