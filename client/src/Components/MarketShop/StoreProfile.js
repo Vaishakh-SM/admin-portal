@@ -30,8 +30,10 @@ export default function StoreProfile() {
   const [availability, setAvailability] = useState("");
   const [licenseID, setID] = useState("");
   const [licenseExpiry, setExpiry] = useState();
+  const [rating, setRating] = useState();
   const [pendingbills, setPendingBills] = useState([]);
   const [statRequests, setStatRequests] = useState([]);
+  const [messages, setMessages] = useState([]);
   let navigate = useNavigate();
 
   useEffect(() => {
@@ -47,12 +49,16 @@ export default function StoreProfile() {
       setAvailability(row.Availability);
       setID(row.LicenseID);
       setExpiry(row.LicenseExpiry);
+      setRating(row.rating);
     });
     axios.get("http://localhost:3001/api/getPendingBills").then((response) => {
       setPendingBills(response.data.info);
     });
     axios.get("http://localhost:3001/api/getRequestStatus").then((response) => {
       setStatRequests(response.data.info);
+    });
+    axios.get("http://localhost:3001/api/getFeedback").then((response) => {
+      setMessages(response.data.info);
     });
   }, []);
 
@@ -96,6 +102,10 @@ export default function StoreProfile() {
             <th style={{ textalign: "left" }}>License Expiry:</th>
             <td style={{ textalign: "left" }}>{licenseExpiry}</td>
           </tr>
+          <tr>
+            <th style={{ textalign: "left" }}>Feedback:</th>
+            <td style={{ textalign: "left" }}>{rating}/5</td>
+          </tr>
         </table>
         <br />
         <Button
@@ -115,6 +125,20 @@ export default function StoreProfile() {
         <br />
       </div>
       <div style={{ padding: "2%", width: "46%", float: "right" }}>
+        <Heading level="3">
+          <u>Feedback Messages</u>
+        </Heading>
+        <table>
+          <tbody>
+            {messages.map((fd) => {
+              return (
+                <tr align="center">
+                  <td align="center">{fd.message}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
         <Heading level="3">
           <u>Pending Bills</u>
         </Heading>

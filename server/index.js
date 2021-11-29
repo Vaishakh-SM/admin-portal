@@ -208,6 +208,136 @@ app.get("/api/getRequestStatus", async (req, res) => {
   }
 });
 
+app.get("/api/getBillRequests", async (req, res) => {
+  const query =
+    "SELECT `a`.*,`storeID`,`type`,`month`,`due_amount` from `billrequests` `a` LEFT JOIN `pendingbills` `b` ON `a`.`pb_id`=`b`.`pb_id`";
+  const [rows, fields] = await db.query(query);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getLicenseRequests", async (req, res) => {
+  const query =
+    "SELECT `a`.*,`storeID`,`licenseExpiry` from `license_ext_req` `a` LEFT JOIN `license` `b` ON `a`.`licenseID`=`b`.`licenseID`";
+  const [rows, fields] = await db.query(query);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getShopkeeper", async (req, res) => {
+  console.log("User cookie is", req.sessionID);
+  const username = req.session.username;
+
+  const [rows, fields] = await db.query(
+    "SELECT * FROM `shopkeepers` WHERE username=?",
+    [username]
+  );
+
+  try {
+    const [rows2, fields2] = await db.query(
+      "SELECT `StoreName` FROM `Stores` WHERE `StoreID`=?",
+      [rows[0].storeID]
+    );
+
+    res.send({
+      success: true,
+      username: req.session.username,
+      name: rows[0].name,
+      storeID: rows[0].storeID,
+      storeName: rows2[0].StoreName,
+      phonenumber: rows[0].phonenumber,
+      securitypassID: rows[0].securitypassID,
+      passexpiry: rows[0].passexpiry.toDateString(),
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.get("/api/getFeedback", async (req, res) => {
+  const query =
+    "SELECT `message` from `feedback` WHERE `StoreID`=(SELECT `StoreID` FROM `Shopkeepers` WHERE `username`=?) AND `message` IS NOT NULL ";
+  const [rows, fields] = await db.query(query, [req.session.username]);
+
+  try {
+    res.send({ success: true, info: rows });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false });
+  }
+});
+
+app.post("/api/addStore", async (req, res) => {
+  const name = req.body.storename;
+  const location = req.body.location;
+  const category = req.body.category;
+  const availability = req.body.availability;
+
+  const query =
+    "INSERT IGNORE INTO `Stores`(`storeName`,`location`,`category`,`availability`) VALUES(?,?,?,?)";
+  try {
+    db.query(query, [name, location, category, availability], (err, res) => {
+      if (err) throw err;
+      console.log("res is", res);
+    });
+    res.send({
+      success: true,
+      message: "Store added.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/addFeedback", async (req, res) => {
+  const store = req.body.store;
+  const storeID = Number(store.split("-")[0]);
+  const service = req.body.service;
+  const conduct = req.body.conduct;
+  const availability = req.body.availability;
+  const quality = req.body.quality;
+  const price = req.body.price;
+  const message = req.body.message;
+
+  try {
+    const query =
+      "INSERT IGNORE INTO `Feedback`(`storeID`,`service`,`availability`,`quality`,`price`,`conduct`,`message`) VALUES(?,?,?,?,?,?,?)";
+    db.query(
+      query,
+      [storeID, service, availability, quality, price, conduct, message],
+      (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      }
+    );
+
+    const query2 = "CALL updateRating(?);";
+    db.query(query2, [storeID], (err, res) => {
+      if (err) throw err;
+      console.log("res is", res);
+    });
+    res.send({
+      success: true,
+      message: "Feedback submitted.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
 app.post("/api/addShopkeeperDetails", async (req, res) => {
   const username = req.session.username;
   const name = req.body.name;
@@ -217,8 +347,9 @@ app.post("/api/addShopkeeperDetails", async (req, res) => {
   const expiry = req.body.expiry;
   const storeID = Number(store.split("-")[0]);
 
-  const passQuery = "SELECT * FROM `shopkeepers` WHERE `securitypassID` = ?";
-  const [rows, fields] = await db.query(passQuery, [securitypassID]);
+  const passQuery =
+    "SELECT * FROM `shopkeepers` WHERE `securitypassID` = ? OR `storeID` = ?";
+  const [rows, fields] = await db.query(passQuery, [securitypassID, storeID]);
   if (rows.length > 0) {
     res.send({ success: false, message: "User already exists." });
     throw new Error("User exists.");
@@ -288,6 +419,46 @@ app.post("/api/addBillRequest", async (req, res) => {
   }
 });
 
+app.post("/api/updateBillRequest", async (req, res) => {
+  const records = req.body;
+  const query = "UPDATE `billrequests` SET `status`=? WHERE `breqID`=?";
+  try {
+    records.forEach((obj, i) => {
+      db.query(query, [obj.status, obj.id], (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      });
+    });
+    res.send({
+      success: true,
+      message: "Status updated.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
+app.post("/api/updateLicenseRequest", async (req, res) => {
+  const records = req.body;
+  const query = "UPDATE `license_ext_req` SET `status`=? WHERE `er_id`=?";
+  try {
+    records.forEach((obj, i) => {
+      db.query(query, [obj.status, obj.id], (err, res) => {
+        if (err) throw err;
+        console.log("res is", res);
+      });
+    });
+    res.send({
+      success: true,
+      message: "Status updated.",
+    });
+  } catch (e) {
+    console.log(e);
+    res.send({ success: false, message: "Something went wrong. Try again" });
+  }
+});
+
 app.post("/api/addLicenseExt", async (req, res) => {
   const username = req.session.username;
   const period = req.body.extPeriod;
@@ -321,37 +492,6 @@ app.post("/api/addLicenseExt", async (req, res) => {
   } catch (e) {
     console.log(e);
     res.send({ success: false, message: "Something went wrong. Try again" });
-  }
-});
-
-app.get("/api/getShopkeeper", async (req, res) => {
-  console.log("User cookie is", req.sessionID);
-  const username = req.session.username;
-
-  const [rows, fields] = await db.query(
-    "SELECT * FROM `shopkeepers` WHERE username=?",
-    [username]
-  );
-
-  try {
-    const [rows2, fields2] = await db.query(
-      "SELECT `StoreName` FROM `Stores` WHERE `StoreID`=?",
-      [rows[0].storeID]
-    );
-
-    res.send({
-      success: true,
-      username: req.session.username,
-      name: rows[0].name,
-      storeID: rows[0].storeID,
-      storeName: rows2[0].StoreName,
-      phonenumber: rows[0].phonenumber,
-      securitypassID: rows[0].securitypassID,
-      passexpiry: rows[0].passexpiry.toDateString(),
-    });
-  } catch (e) {
-    console.log(e);
-    res.send({ success: false });
   }
 });
 

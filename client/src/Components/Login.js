@@ -60,6 +60,9 @@ export default function Login() {
                 .then((response) => {
                   if (response.data.success === true) {
                     switch (response.data.roleID) {
+                      case 1:
+                        navigate("/");
+                        break;
                       case 2:
                         navigate("/guesthouse/profile");
                         break;
@@ -69,8 +72,11 @@ export default function Login() {
                       case 4:
                         navigate("/landscaping/profile");
                         break;
+                      case 5:
+                        navigate("/general/profile");
+                        break;
                       default:
-                        navigate("/profile");
+                        navigate("/");
                     }
                   } else {
                     Swal.fire("Wrong credentials");

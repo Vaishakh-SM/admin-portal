@@ -25,24 +25,20 @@ const Head = () => {
         icon={<CaretPrevious />}
         hoverIndicator
         onClick={() => {
-          navigate("/market/profile");
+          navigate("/general/profile");
         }}
       />
     </Header>
   );
 };
 
-export default function MUpdate() {
-  const [username, setUserName] = useState("");
+export default function Feedback() {
   const [store, setStore] = useState([]);
   const [value, setValue] = useState({});
   let navigate = useNavigate();
   const size = React.useContext(ResponsiveContext);
 
   useEffect(() => {
-    axios.get("http://localhost:3001/api/getUser").then((response) => {
-      setUserName(response.data.username);
-    });
     axios.get("http://localhost:3001/api/extractStores").then((response) => {
       let optionArray = [];
       const rows = response.data.info;
@@ -77,7 +73,7 @@ export default function MUpdate() {
         >
           {" "}
           <Heading level="3" alignSelf="center">
-            Profile Details: {username}
+            Feedback Form
           </Heading>
           <Form
             value={value}
@@ -85,34 +81,74 @@ export default function MUpdate() {
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
               axios
-                .post("http://localhost:3001/api/addShopkeeperDetails", value)
+                .post("http://localhost:3001/api/addFeedback", value)
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);
-                    navigate("/market/profile");
+                    navigate("/general/profile");
                   } else {
                     Swal.fire(response.data.message);
                   }
                 });
             }}
           >
-            <FormField name="name" htmlFor="name" label="Full Name">
-              <TextInput type="text" id="name" name="name" required/>
-            </FormField>
             <FormField name="store" label="Store">
-              <Select options={store} name="store" required/>
+              <Select options={store} name="store" required />
             </FormField>
-            <FormField name="phonenumber" label="Phone Number">
-              <TextInput type="tel" name="phonenumber" required/>
+            <FormField name="service" label="Service (1-Terrible, 5-Excellent)">
+              <Select
+                name="service"
+                options={[1, 2, 3, 4, 5]}
+                defaultValue="3"
+                required
+              />
             </FormField>
-            <FormField name="securitypass" label="Security Pass ID">
-              <TextInput type="text" name="securitypass" required/>
+            <FormField
+              name="availability"
+              label="Availability (1-Very inconsistent, 5-Always available)"
+            >
+              <Select
+                name="availability"
+                options={[1, 2, 3, 4, 5]}
+                defaultValue="3"
+                required
+              />
             </FormField>
-            <FormField name="expiry" label="Security Pass Expiry">
-              <TextInput type="date" name="expiry" required/>
+            <FormField name="quality" label="Quality (1-Terrible, 5-Excellent)">
+              <Select
+                name="quality"
+                options={[1, 2, 3, 4, 5]}
+                defaultValue="3"
+                required
+              />
+            </FormField>
+            <FormField
+              name="price"
+              label="Price levels (1-Unsatisfactory, 5-Reasonable)"
+            >
+              <Select
+                name="price"
+                options={[1, 2, 3, 4, 5]}
+                defaultValue="3"
+                required
+              />
+            </FormField>
+            <FormField
+              name="conduct"
+              label="Conduct/Behavior (1-Terrible, 5-Excellent)"
+            >
+              <Select
+                name="conduct"
+                options={[1, 2, 3, 4, 5]}
+                defaultValue="3"
+                required
+              />
+            </FormField>
+            <FormField name="message" label="Message">
+              <TextInput placeholder="Type here" name="message" />
             </FormField>
             <br />
-            <Button type="submit" size="medium" primary label="Update" />
+            <Button type="submit" size="medium" primary label="Submit" />
             &nbsp;&nbsp;
             <Button type="reset" size="medium" label="Reset" />
           </Form>

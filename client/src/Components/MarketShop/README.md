@@ -16,13 +16,13 @@ CREATE TABLE Shopkeepers(
 ```
 CREATE TABLE billrequests(
   	breqID INT PRIMARY KEY AUTO_INCREMENT,
-  	storeID INT,
   	amount INT,
-  	type ENUM('Rent','Electricity','Others'),
   	transactionID  VARCHAR(255),
   	modeofpayment VARCHAR(100),
   	status ENUM('Denied','Accepted','In review','On hold') DEFAULT 'In review',
-  	FOREIGN KEY (storeID) REFERENCES Stores(storeID));
+	pb_id INT,
+	FOREIGN KEY (pb_id) REFERENCES pendingbills(pb_id)
+);
 ```
 
 ```
@@ -35,15 +35,50 @@ CREATE TABLE license(
 ```
 
 ```
- create table license_ext_req(
-    	er_id int primary key auto_increment,
+CREATE TABLE license_ext_req(
+    	er_id INT PRIMARY AUTO_INCREMENT,
     	licenseID varchar(10) unique,
-    	period float,
-    	fee_paid int,
+    	period FLOAT,
+    	fee_paid INT,
     	status enum('Denied','Accepted','In review','On hold') default 'In review',
-    	transactionID varchar(255) unique,
-    	modeofpayment varchar(100),
-    	foreign key (licenseID) references license(licenseID)
+    	transactionID VARCHAR(255) UNIQUE,
+    	modeofpayment VARCHAR(100),
+    	FOREIGN KEY (licenseID) REFERENCES license(licenseID)
+);
+```
+
+```
+CREATE TABLE pendingbills(
+	pb_id INT PRIMARY KEY AUTO_INCREMENT,
+	storeID INT,
+	type ENUM ('Rent','Electricity','Others'),
+	month DATE,
+	due_amount INT
+);
+```
+
+```
+CREATE TABLE Stores(
+	StoreID INT PRIMARY KEY AUTO_INCREMENT,
+	StoreName TEXT,
+	Location TEXT,
+	Category TEXT,
+	Availability TEXT,
+	Rating FLOAT
+);
+```
+
+```
+CREATE TABLE Feedback(
+	FeedbackID INT PRIMARY KEY AUTO_INCREMENT,
+	StoreID INT,
+	Service Availability,
+	Availability INT,
+	Quality INT,
+	Price INT,
+	Conduct INT,
+	Message TEXT, 
+	FOREIGN KEY (StoreID) REFERENCES Stores(StoreID)
 );
 ```
 
@@ -58,6 +93,19 @@ BEGIN
 IF(NEW.RoleID=3) THEN
 INSERT INTO shopkeepers(username) VALUES (new.username);
 END IF;
+END$$
+DELIMITER ;
+```
+
+Creating procedures:
+
+```
+DELIMITER $$
+CREATE PROCEDURE updateRating(IN sID INT)
+BEGIN
+DECLARE s,a,q,p,c FLOAT DEFAULT 0;
+SELECT AVG(service),AVG(availability),AVG(quality),AVG(price),AVG(conduct) INTO s,a,q,p,c FROM feedback WHERE storeID=sID;
+UPDATE Stores SET rating=((s+a+q+p+c)/5.0) WHERE storeID=sID;
 END$$
 DELIMITER ;
 ```

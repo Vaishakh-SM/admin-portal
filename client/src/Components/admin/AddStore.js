@@ -24,14 +24,14 @@ const Head = () => {
         icon={<CaretPrevious />}
         hoverIndicator
         onClick={() => {
-          navigate("/market/store_profile");
+          navigate("/profile");
         }}
       />
     </Header>
   );
 };
 
-export default function SubmitBill() {
+export default function AddStore() {
   const [value, setValue] = useState({});
   let navigate = useNavigate();
   const size = React.useContext(ResponsiveContext);
@@ -57,7 +57,7 @@ export default function SubmitBill() {
         >
           {" "}
           <Heading level="3" alignSelf="center">
-            License Extension
+            Add new store
           </Heading>
           <Form
             value={value}
@@ -65,34 +65,37 @@ export default function SubmitBill() {
             onReset={() => setValue({})}
             onSubmit={({ value }) => {
               axios
-                .post("http://localhost:3001/api/addLicenseExt", value)
+                .post("http://localhost:3001/api/addStore", value)
                 .then((response) => {
                   if (response.data.success) {
                     Swal.fire(response.data.message);
-                    navigate("/market/store_profile");
+                    navigate("/profile");
                   } else {
                     Swal.fire(response.data.message);
                   }
                 });
             }}
           >
+            <FormField name="storename" label="Store Name">
+              <TextInput type="text" name="storename" required />
+            </FormField>
+            <FormField name="location" label="Location within campus">
+              <TextInput type="text" name="location" required />
+            </FormField>
             <FormField
-              name="extPeriod"
-              label="Extension period required in years"
+              name="category"
+              label="Category (eg. Restaurant, Stationery, Cycle Repair,etc)"
             >
-              <TextInput type="number" name="extPeriod" required />
+              <TextInput type="text" name="category" required />
             </FormField>
-            <FormField name="fee" label="Fee Paid">
-              <TextInput type="number" name="fee" required />
-            </FormField>
-            <FormField name="transactionID" label="Transaction ID">
-              <TextInput type="text" name="transactionID" required />
-            </FormField>
-            <FormField name="modeofpayment" label="Mode of Payment">
-              <TextInput type="text" name="modeofpayment" required />
+            <FormField
+              name="availability"
+              label="Availability (Format: Mon-Fri 8AM-12PM)"
+            >
+              <TextInput type="text" name="availability" required />
             </FormField>
             <br />
-            <Button type="submit" size="medium" primary label="Request" />
+            <Button type="submit" size="medium" primary label="Add" />
             &nbsp;&nbsp;
             <Button type="reset" size="medium" label="Reset" />
           </Form>
