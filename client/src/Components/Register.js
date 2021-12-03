@@ -86,6 +86,11 @@ export default function Register() {
                   { label: "Market Shop Services", roleID: 3 },
                   { label: "Landscaping Services", roleID: 4 },
                   { label: "General user", roleID: 5 },
+                  { label: "Regular Cook", roleID: 201 },
+                  { label: "Contract Cook", roleID: 202 },
+                  { label: "Cleaner", roleID: 203 },
+                  { label: "Cook Supervisor", roleID: 204 },
+                  { label: "Guesthouse Staff", roleID: 205 },
                 ]}
                 name="role"
                 labelKey="label"

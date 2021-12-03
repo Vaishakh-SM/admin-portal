@@ -1,7 +1,13 @@
+const path = require("path");
 const cors = require("cors");
 const express = require("express");
 const session = require("express-session");
 const mysql = require("mysql2/promise");
+const fs = require("fs");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
+const PDFDocument = require("pdfkit-table");
+
 const app = express();
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
@@ -84,11 +90,10 @@ app.post("/api/login", async (req, res) => {
       if (result == true) {
         req.session.username = username;
 
-        console.log("Session is now ", req.sessionID);
         req.session.save();
         return res.send({
           success: true,
-          roleID: RoleID,
+          roleID: roleID,
         });
       } else {
         res.send({ success: false });
@@ -138,9 +143,19 @@ app.post("/api/register", async (req, res) => {
 });
 
 app.get("/api/getUser", (req, res) => {
-  console.log("User cookie is", req.sessionID);
   res.send({
     username: req.session.username,
+  });
+});
+
+app.get("/api/getUserID", async (req, res) => {
+  const [rows, fields] = await db.query(
+    "Select UID, RoleID FROM Users WHERE username =?",
+    [req.session.username]
+  );
+  res.send({
+    UID: rows[0].UID,
+    RoleID: rows[0].RoleID,
   });
 });
 
@@ -222,4 +237,525 @@ app.get("/api/getMarketPeople", async (req, res) => {
     console.log(e);
     res.send({ success: false });
   }
+});
+
+app.post("/api/guesthouse/searchRoom", async (req, res) => {
+  const username = req.session.username;
+  const capacity = req.body.capacity;
+  const beds = req.body.beds;
+  const startDate = req.body.startDate;
+  const endDate = req.body.endDate;
+  const type = req.body.type;
+  const [rows, fields] = await db.query(
+    "SELECT RoomID, Rate FROM `Room` WHERE MaxCapacity >= ? AND Beds=? AND type=? AND RoomID NOT IN (Select RoomID FROM RoomBooking WHERE (StartDate >= ? AND StartDate <= ?) OR (EndDate >= ? AND EndDate <= ?)) LIMIT 10",
+    [capacity, beds, type, startDate, endDate, startDate, endDate]
+  );
+
+  res.send({
+    success: true,
+    message: "The available rooms for entered data are:",
+    rooms: rows,
+  });
+});
+
+app.post("/api/guesthouse/bookRoom", async (req, res) => {
+  const username = req.session.username;
+  const RoomID = req.body.roomID;
+  const startDate = req.body.startDate;
+  const endDate = req.body.endDate;
+
+  const [checkQuery, checkFields] = await db.query(
+    "Select RoomID FROM `RoomBooking` WHERE ((StartDate >= ? AND StartDate <= ?) OR (EndDate >= ? AND EndDate <= ?)) AND RoomID=?",
+    [startDate, endDate, startDate, endDate, RoomID]
+  );
+
+  if (checkQuery.length > 0) {
+    return res.send({
+      success: false,
+      message: "Room is already booked in given date",
+    });
+  }
+  // Check if all constraints are followed if possible
+  const UIDQuery = "SELECT `UID` FROM `Users` WHERE `username` = ?";
+
+  const [q1rows, q1fields] = await db.query(UIDQuery, [username]);
+  const UID = q1rows[0].UID;
+
+  const [rows, fields] = await db.query(
+    "INSERT INTO `RoomBooking` VALUES (NULL,?,?,?,?,'Pending')",
+    [UID, RoomID, startDate, endDate]
+  );
+
+  return res.send({
+    success: true,
+  });
+});
+
+app.get("/api/assets/uploads/*", (req, res) => {
+  res.sendFile(path.join(__dirname, "./uploads", req.params[0]));
+});
+
+app.get("/api/guesthouse/getFood", async (req, res) => {
+  const [rows, fields] = await db.query("Select * FROM `Food`");
+
+  res.send({ foodItems: rows });
+});
+
+app.post("/api/guesthouse/addFood", upload.single("file"), async (req, res) => {
+  const file = req.file;
+
+  await db.query("INSERT INTO `Food` VALUES (NULL,?,?,?,?)", [
+    req.body.FoodName,
+    req.body.FoodDesc,
+    req.body.Rate,
+    file.filename,
+  ]);
+
+  return res.send({ success: true });
+});
+
+app.post("/api/guesthouse/orderFood", async (req, res) => {
+  const FoodID = req.body.FoodID;
+
+  const [uid, uidfields] = await db.query(
+    "SELECT UID FROM Users WHERE username = ?",
+    [req.session.username]
+  );
+  var datetime = new Date();
+
+  const [bookedRoom, bookedRoomFileds] = await db.query(
+    "SELECT `RoomID` FROM `RoomBooking` WHERE UID = ? AND StartDate <= ? AND EndDate >= ?",
+    [
+      uid[0].UID,
+      datetime.toISOString().slice(0, 10),
+      datetime.toISOString().slice(0, 10),
+    ]
+  );
+
+  await db.query(
+    "INSERT INTO `FoodBooking` VALUES (NULL,?,?,?,'Placed','Pending')",
+    [uid[0].UID, FoodID, datetime.toISOString().slice(0, 10)]
+  );
+
+  return res.send({ success: true });
+});
+
+app.get("/api/guesthouse/cook/getOrders", async (req, res) => {
+  const [rows, fields] = await db.query("Select * FROM `PendingOrders`");
+  res.send({ foodItems: rows });
+});
+
+app.post("/api/guesthouse/cook/deliver", async (req, res) => {
+  console.log("ID is ", req.body.FoodBookingID);
+  try {
+    await db.query(
+      "UPDATE `FoodBooking` SET `OrderStatus`='Delivered' WHERE FoodBookingID = ?",
+      [req.body.FoodBookingID]
+    );
+  } catch (e) {
+    res.send({ success: false, message: "Some error has occured" });
+    console.log(e);
+  }
+  res.send({ success: true });
+});
+
+app.get("/api/guesthouse/employee/bill/*", async (req, res) => {
+  const UID = req.params[0];
+
+  const [foodBill, foodBillFields] = await db.query(
+    "Select * from FoodBills WHERE UID = ?",
+    [UID]
+  );
+
+  const [roomBill, roomBillFields] = await db.query(
+    "Select * from RoomBills WHERE UID = ?",
+    [UID]
+  );
+
+  const [totalBill, totalBillFields] = await db.query(
+    "Select * from TotalBills WHERE UID = ?",
+    [UID]
+  );
+
+  let foodDetails = [];
+
+  for (var i in foodBill) {
+    foodDetails.push([]);
+    for (var j in foodBill[i]) {
+      if (j == "BookedDate") {
+        foodDetails[i].push(String(foodBill[i][j]).slice(0, 10));
+      } else {
+        foodDetails[i].push(foodBill[i][j]);
+      }
+    }
+  }
+
+  let roomDetails = [];
+
+  for (var i in roomBill) {
+    roomDetails.push([]);
+    for (var j in roomBill[i]) {
+      if (j == "EndDate") {
+        roomDetails[i].push(String(roomBill[i][j]).slice(0, 10));
+      } else {
+        roomDetails[i].push(roomBill[i][j]);
+      }
+    }
+  }
+
+  let totalDetails = [];
+
+  for (var i in totalBill) {
+    totalDetails.push([]);
+    for (var j in totalBill[i]) {
+      totalDetails[i].push(totalBill[i][j]);
+    }
+  }
+
+  const doc = new PDFDocument({ margin: 50, size: "A4" });
+
+  const foodTable = {
+    title: "Food Bills",
+    subtitle: "Bills for all the Food Bookings",
+    headers: ["User ID", "Food Name", "Date of booking", "Cost"],
+    rows: foodDetails,
+  };
+
+  const roomTable = {
+    title: "Room Bills",
+    subtitle: "Bills for all the Room Bookings",
+    headers: ["User ID", "Room ID", "Last Date of stay", "Cost"],
+    rows: roomDetails,
+  };
+
+  const totalTable = {
+    title: "Total Bill",
+    headers: ["User ID", "Grand total"],
+    rows: totalDetails,
+  };
+
+  doc.table(foodTable, {
+    width: 400,
+  });
+
+  doc.table(roomTable, {
+    width: 400,
+  });
+
+  doc.table(totalTable, {
+    width: 400,
+  });
+
+  doc.pipe(res);
+  doc.end();
+});
+
+app.get("/api/guesthouse/supervisor/getCooks", async (req, res) => {
+  const [regularCooks, RCfields] = await db.query(
+    "Select GuestHouseStaff.StaffID, GuestHouseStaff.Name FROM GuestHouseStaff, Users WHERE GuestHouseStaff.UID = Users.UID AND Users.RoleID=201"
+  );
+
+  const [contractualCooks, CCfields] = await db.query(
+    "Select GuestHouseStaff.StaffID, GuestHouseStaff.Name FROM GuestHouseStaff, Users WHERE GuestHouseStaff.UID = Users.UID AND Users.RoleID=202"
+  );
+
+  const [cleaner, cleanerfields] = await db.query(
+    "Select GuestHouseStaff.StaffID, GuestHouseStaff.Name FROM GuestHouseStaff, Users WHERE GuestHouseStaff.UID = Users.UID AND Users.RoleID=203"
+  );
+
+  res.send({
+    regular: regularCooks,
+    contractual: contractualCooks,
+    cleaner: cleaner,
+  });
+});
+
+app.post("/api/guesthouse/supervisor/setSchedule", async (req, res) => {
+  await db.query(
+    "DELETE FROM GuestHouseStaffSchedule WHERE ShiftDate >= ? AND ShiftDate <= DATE_ADD(?, INTERVAL 7 DAY)",
+    [req.body.startDate, req.body.startDate]
+  );
+
+  // Inserting in day 1 - 4
+  for (let i = 0; i < 4; i++) {
+    await db.query(
+      "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+      [
+        req.body.contractual1.StaffID,
+        req.body.startDate,
+        String(i),
+        "Morning",
+        req.body.contractual1.StaffID,
+        req.body.startDate,
+        String(i),
+        "Night",
+      ]
+    );
+
+    await db.query(
+      "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+      [
+        req.body.contractual2.StaffID,
+        req.body.startDate,
+        String(i),
+        "Morning",
+        req.body.contractual2.StaffID,
+        req.body.startDate,
+        String(i),
+        "Night",
+      ]
+    );
+
+    await db.query(
+      "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+      [
+        req.body.cleaner1.StaffID,
+        req.body.startDate,
+        String(i),
+        "Morning",
+        req.body.cleaner1.StaffID,
+        req.body.startDate,
+        String(i),
+        "Night",
+      ]
+    );
+  }
+
+  // Day 5,7
+  for (let i of ["4", "6"]) {
+    await db.query(
+      "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+      [
+        req.body.regular.StaffID,
+        req.body.startDate,
+        i,
+        "Morning",
+        req.body.regular.StaffID,
+        req.body.startDate,
+        i,
+        "Night",
+      ]
+    );
+
+    await db.query(
+      "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+      [
+        req.body.contractual1.StaffID,
+        req.body.startDate,
+        i,
+        "Morning",
+        req.body.contractual1.StaffID,
+        req.body.startDate,
+        i,
+        "Morning",
+      ]
+    );
+
+    await db.query(
+      "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+      [
+        req.body.cleaner2.StaffID,
+        req.body.startDate,
+        i,
+        "Morning",
+        req.body.cleaner2.StaffID,
+        req.body.startDate,
+        i,
+        "Morning",
+      ]
+    );
+  }
+
+  // Day 6
+
+  await db.query(
+    "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+    [
+      req.body.regular.StaffID,
+      req.body.startDate,
+      "5",
+      "Morning",
+      req.body.regular.StaffID,
+      req.body.startDate,
+      "5",
+      "Night",
+    ]
+  );
+
+  await db.query(
+    "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+    [
+      req.body.contractual2.StaffID,
+      req.body.startDate,
+      "5",
+      "Morning",
+      req.body.contractual2.StaffID,
+      req.body.startDate,
+      "5",
+      "Morning",
+    ]
+  );
+
+  await db.query(
+    "INSERT INTO GuestHouseStaffSchedule VALUES(?,DATE_ADD(?, INTERVAL ? DAY),?), (?,DATE_ADD(?, INTERVAL ? DAY),?)",
+    [
+      req.body.cleaner2.StaffID,
+      req.body.startDate,
+      "5",
+      "Morning",
+      req.body.cleaner2.StaffID,
+      req.body.startDate,
+      "5",
+      "Morning",
+    ]
+  );
+
+  res.send({ success: true });
+});
+
+app.post("/api/guesthouse/supervisor/getSchedule", async (req, res) => {
+  const [schedule, scheduleFields] = await db.query(
+    "Select GuestHouseStaff.Name, GuestHouseStaffSchedule.ShiftDate, GuestHouseStaffSchedule.ShiftTime FROM GuestHouseStaffSchedule, GuestHouseStaff WHERE ShiftDate >= ? AND ShiftDate <= ? AND GuestHouseStaff.StaffID = GuestHouseStaffSchedule.StaffID",
+    [req.body.startDate, req.body.endDate]
+  );
+
+  res.send({ schedule: schedule });
+});
+
+app.post("/api/guesthouse/supervisor/setScheduleOnDate", async (req, res) => {
+  if (req.body.shift == "Both") {
+    await db.query("DELETE FROM GuestHouseStaffSchedule WHERE ShiftDate = ?", [
+      req.body.startDate,
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cook1.StaffID,
+      req.body.startDate,
+      "Morning",
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cook1.StaffID,
+      req.body.startDate,
+      "Night",
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cook2.StaffID,
+      req.body.startDate,
+      "Morning",
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cook2.StaffID,
+      req.body.startDate,
+      "Night",
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cleaner.StaffID,
+      req.body.startDate,
+      "Morning",
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cleaner.StaffID,
+      req.body.startDate,
+      "Night",
+    ]);
+  } else {
+    await db.query(
+      "DELETE FROM GuestHouseStaffSchedule WHERE ShiftDate = ? AND ShiftTime = ?",
+      [req.body.startDate, req.body.shift]
+    );
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cook1.StaffID,
+      req.body.startDate,
+      req.body.shift,
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cook2.StaffID,
+      req.body.startDate,
+      req.body.shift,
+    ]);
+
+    await db.query("INSERT INTO GuestHouseStaffSchedule VALUES (?,?,?)", [
+      req.body.cleaner.StaffID,
+      req.body.startDate,
+      req.body.shift,
+    ]);
+  }
+
+  res.send({ success: true });
+});
+
+app.get("/api/guesthouse/employee/getPendingFoodForID/*", async (req, res) => {
+  const UID = req.params[0];
+
+  const [rows, fields] = await db.query(
+    "Select FoodBooking.FoodBookingID, Food.FoodName, Food.Rate, FoodBooking.BookedDate FROM FoodBooking, Food WHERE UID=? AND OrderStatus='Delivered' AND PaymentStatus='Pending' AND FoodBooking.FoodID = Food.FoodID",
+    [UID]
+  );
+
+  res.send({ bill: rows });
+});
+
+app.post("/api/guesthouse/employee/clearBillsForID/", async (req, res) => {
+  await db.query("DELETE FROM FoodBooking WHERE UID =?", [req.body.UID]);
+  await db.query("DELETE FROM RoomBooking WHERE UID =?", [req.body.UID]);
+  res.send({ success: true });
+});
+
+app.post("/api/guesthouse/employee/clearFoodBillsByID/", async (req, res) => {
+  await db.query("DELETE FROM FoodBooking WHERE FoodBookingID =?", [
+    req.body.FoodBookingID,
+  ]);
+  res.send({ success: true });
+});
+
+app.post("/api/guesthouse/employee/clearRoomBillsByID/", async (req, res) => {
+  await db.query("DELETE FROM RoomBooking WHERE RoomBookingID =?", [
+    req.body.RoomBookingID,
+  ]);
+  res.send({ success: true });
+});
+
+app.get("/api/guesthouse/employee/getPendingRoomForID/*", async (req, res) => {
+  const UID = req.params[0];
+
+  const [rows, fields] = await db.query(
+    "SELECT UID, RoomBookingID, RoomID, EndDate, (Days*Rate) AS Cost FROM (Select RoomBooking.RoomBookingID, RoomBooking.UID, RoomBooking.RoomID, DATEDIFF(EndDate,StartDate) As Days, Room.Rate, RoomBooking.EndDate FROM RoomBooking, Room WHERE Room.RoomID = RoomBooking.RoomID AND RoomBooking.PaymentStatus='Pending') AS T WHERE UID = ?",
+    [UID]
+  );
+
+  res.send({ bill: rows });
+});
+
+app.post("/api/guesthouse/employee/addExpenditure", async (req, res) => {
+  await db.query("INSERT INTO GuestHouseExpenditure VALUES (NULL,?,?,?)", [
+    req.body.ExpDesc,
+    req.body.ExpDate,
+    req.body.TotalExp,
+  ]);
+
+  res.send({ success: true });
+});
+
+app.post("/api/guesthouse/employee/getExpenditure", async (req, res) => {
+  const [rows, fields] = await db.query(
+    "Select * FROM GuestHouseExpenditure WHERE ExpDate >= ? AND ExpDate <= ?",
+    [req.body.startDate, req.body.endDate]
+  );
+
+  res.send({ expenditure: rows });
+});
+
+app.post("/api/guesthouse/employee/deleteExpenditure", async (req, res) => {
+  await db.query("DELETE FROM GuestHouseExpenditure WHERE ExpID = ?", [
+    req.body.ExpID,
+  ]);
+
+  res.send({ success: true });
 });
